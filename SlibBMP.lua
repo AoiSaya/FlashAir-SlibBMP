@@ -2,7 +2,7 @@
 -- SoraMame libraly of BMP for W4.00.03
 -- Copyright (c) 2018, Saya
 -- Original by max1220/lua-bitmap, Copyright (c) 2017 Max
--- 2018/06/10 rev.0.04 Saya 24bit version
+-- 2018/08/22 rev.0.05 Saya 24bit version
 -----------------------------------------------
 local BMP = {}
 
@@ -195,4 +195,5 @@ function BMP:conv64K(bitmap, ...)
 	return img
 end
 
+collectgarbage()
 return BMP
