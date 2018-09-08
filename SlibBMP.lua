@@ -2,7 +2,7 @@
 -- SoraMame libraly of BMP for W4.00.03
 -- Copyright (c) 2018, Saya
 -- Original by max1220/lua-bitmap, Copyright (c) 2017 Max
--- 2018/08/22 rev.0.05 Saya 24bit version
+-- 2018/09/09 rev.0.06 Saya breakpoint remove
 -----------------------------------------------
 local BMP = {}
 
@@ -163,7 +163,6 @@ function BMP:conv64K(bitmap, ...)
 			ch=bx(b,3,5)*8+bx(g,5,3)
 			cl=bx(g,2,3)*32+bx(r,3,5)
 			cols[i*2+1],cols[i*2+2]=ch,cl
---			lcd:pset(x1+i,cy,ch*256+cl)
 			idx=idx+3
 		end
 		line = line .. string.char(table.unpack(cols))
@@ -173,7 +172,6 @@ function BMP:conv64K(bitmap, ...)
 		dstData[i] = line
 		i = i+1
 		collectgarbage()
-		breakpoint()
 	end
 	for j=i, h do
 		dstData[j] = string.rep(bgcol,w)
