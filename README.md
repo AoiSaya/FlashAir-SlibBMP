@@ -13,6 +13,10 @@ Tested on FlashAir W-04 v4.00.03.
 
 SlibBMP.lua -- Copy to somewhere in Lua's search path.
 
+## Color format of functions
+
+bgcolor : BBBBB_GGGGGG_RRRRR (64K(16bpp) back ground color)
+
 ## Internal bitmap data format
 
     bitmap  = {}  
@@ -29,7 +33,8 @@ command | description
 --- | ---
 BMP:loadFile(path, flat)           | Read content from file and return as bitmap. flat=1:data flat mode, =0:data array mode.
 BMP:saveFile(path, bitmap)         | Dump bitmap to file.
-BMP:conv64K(bitmap, ...)           | Convert 24bit bitmap to 16 bit bitmap.
+BMP:conv64K(bitmap)                | Convert 24bit bitmap to 16 bit bitmap.
+BMP:conv64K(bitmap, x, y, width, height, bgcolor)| Crop out the 24bpp bitmap and convert it to 16bpp bitmap.<br>And replace the range not in the original image with the background color.
 
 ## Licence
 
