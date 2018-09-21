@@ -25,7 +25,7 @@ bgcolor : BBBBB_GGGGGG_RRRRR (64K(16bpp) back ground color)
     bitmap.height -- bitmap height  
     bitmap.bit    -- bpp, 24 or 16(BBBBB_GGGGGG_RRRRR format)  
     bitmap.flat   -- 1:Flat(Stuffing without leaving spaces for small image), 0:Stored in an array for each line.  
-    bitmap.data   -- bitamp data  
+    bitmap.data   -- bitmap data  
 
 ## Usage
 
