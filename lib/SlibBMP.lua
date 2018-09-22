@@ -84,7 +84,7 @@ function BMP:saveFile(path, bitmap)
 	local i
 	local fp = io.open(path, "wb")
 	if not fp then
-	return nil, "Can't open file!"
+		return "Can't open file!"
 	end
 
 	local num = bitmap.width * bitmap.bit / 8
@@ -92,14 +92,14 @@ function BMP:saveFile(path, bitmap)
 
 	fp:write(bitmap.header)
 	for i=1, bitmap.height do
-  	  fp:write(bitmap.data[i])
-	  if gap then fp:write(gap); end
-	  collectgarbage()
+		fp:write(bitmap.data[i])
+		if gap then fp:write(gap); end
+		collectgarbage()
 	end
 	fp:close()
 	collectgarbage()
 
-	return 1
+	return "OK"
 end
 
 function BMP:conv64K(bitmap, ...)
