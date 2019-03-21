@@ -2,6 +2,8 @@
 
 Read and write 24bpp or 16bpp uncompressed windows bitmaps from pure Lua.
 
+update at 2019/3/21:Suport part load with convert and (x,y) to udside down
+
 ## Requirement
 
 This is SoraMame library for BMP.  
@@ -33,8 +35,9 @@ command | description
 --- | ---
 bitmap = BMP:loadFile(path, flat)  | **Read content from file and return as bitmap**<br>**path:** path+filename<br>**flat:** 1:data flat mode, 0:data array mode<br>**bitmap:** bitmap table
 res = BMP:saveFile(path, bitmap)   | **Dump bitmap to file**<br>**path:** path+filename<br>**bitmap:** bitmap table<br>**res:** "OK" or error message
-img = BMP:conv64K(bitmap)          | **Convert 24bit bitmap to 16 bit bitmap**<br>**img:** 64K color bitmap table
-img = BMP:conv64K(bitmap, x, y, width, height, bgcolor)| **Crop out the 24bpp bitmap and convert it to 16bpp bitmap**<br>And replace the area out of the original image with the background color<br>**img:** 64K color bitmap table
+img = BMP:conv64K(bitmap or path)          | **Convert 24bit bitmap to 16 bpp bitmap<br>**bitmap:** bitmap table****<br>**path:** path+filename<br><br>**img:** 64K color bitmap table<br>If given path, read content from file
+img = BMP:conv64K(bitmap or path, <br>
+ x, y, width, height, bgcolor)| **Crop out the 24bpp bitmap and convert it to 16bpp bitmap**<br>And replace the area out of the original image with the background color<br><br>If given path, read content from file<br>**bitmap:** bitmap table****<br>**path:** path+filename<br>**img:** 64K color bitmap table
 
 ## Licence
 
