@@ -2,7 +2,7 @@
 -- SoraMame libraly of BMP for W4.00.03
 -- Copyright (c) 2018, Saya
 -- Original by max1220/lua-bitmap, Copyright (c) 2017 Max
--- 2018/09/09 rev.0.06 Saya breakpoint remove
+-- 2019/03/21 rev.0.08 for Part load and udside down
 -----------------------------------------------
 local BMP = {}
 
@@ -26,10 +26,7 @@ function BMP:writeDword(data, offset, value)
 	return self:writeWord(s, offset, bit32.extract(value,0,16))
 end
 
-function BMP:loadFile(path, flat)
-	local i
-	flat = flat or 0 -- 1:data flat mode, 0:data array mode
-
+function BMP:loadHeader(path, flat)
 	local fp = io.open(path, "rb")
 	if not fp then
 		return nil, "Can't open file!"
@@ -40,37 +37,50 @@ function BMP:loadFile(path, flat)
 	if not self:readDword(header, 1) == 0x4D42 then -- Bitmap "magic" header
 		return nil, "Bitmap magic not found"
 	elseif self:readWord(header, 29) ~= 24
-	   and self:readWord(header, 29) ~= 16 then -- Bits per pixel
-		return nil, "Only 24bpp bitmaps supported"
+	   and self:readWord(header, 29) ~= 16
+	   and self:readWord(header, 29) ~= 2  then -- Bits per pixel
+		return nil, "Only 24bpp or 16bpp or 2bpp bitmaps supported"
 	elseif self:readDword(header, 31) ~= 0 then -- Compression
 		return nil, "Only uncompressed bitmaps supported"
 	end
 
 	local bitmap  = {}
-	local offset  = self:readDword(header, 11)
-	local data	  = {}
 	bitmap.header = header
 	bitmap.width  = self:readDword(header, 19)
 	bitmap.height = self:readDword(header, 23)
 	bitmap.bit	  = self:readWord(header, 29)
-	bitmap.flat	  = flat
+	bitmap.flat	  = flat or 0 -- 1:data flat mode, 0:data array mode
+
+	return	bitmap
+end
+
+function BMP:loadFile(path, flat)
+	local i
+
+	local bitmap, mes = BMP:loadHeader(path,flat)
+	if bitmap==nil then
+		return bitmap, mes
+	end
 
 	local fp = io.open(path, "rb")
 	if not fp then
-	return nil, "Can't open file!"
+		return nil, "Can't open file!"
 	end
 
-	fp:seek("set", offset)
+	local offset  = self:readDword(bitmap.header, 11)
 	local num = bitmap.width * bitmap.bit / 8
 	local inc = (-num)%4
 	local data = {}
+
+	fp:seek("set", offset)
 	for i=1, bitmap.height do
 		data[i] = fp:read(num)
 		fp:seek("cur",inc)
+		collectgarbage()
 	end
 	fp:close()
 
-   	if flat==1 then
+	if bitmap.flat==1 then
 		bitmap.data = table.concat(data)
 	else
 		bitmap.data = data
@@ -102,11 +112,30 @@ function BMP:saveFile(path, bitmap)
 	return "OK"
 end
 
-function BMP:conv64K(bitmap, ...)
+function BMP:conv64K(param, ...)
+	local x, y, w, h, bg
+	local loadflg, bitmap, mes, path
+	local xbytes, offset, num, inc, fp
+
+	if param.data==nill then
+		loadflg = true
+		path = param
+	else
+		loadflg = false
+		bitmap = param
+	end
+
+	if loadflg then
+ 		bitmap, mes = BMP:loadHeader(path,0)
+		if bitmap==nil then
+			return bitmap, mes
+		end
+	end
+
 	local x1, x2, y1, y2, ws
 	local i, j, cx, cy, ch, cl, idx
 	local data, b, g, r
-	local bgcol, heaer, line
+	local bgcol, header, line
 	local cols = {}
 	local img = {}
 	local bw = bitmap.width
@@ -133,7 +162,7 @@ function BMP:conv64K(bitmap, ...)
 	x2 = (x+w>=bw) and bw-1 or x+w-1
 	y1 = (y<0) and 0 or y
 	y2 = (y+h>=bh) and bh-1 or y+h-1
-
+    y1,y2 = bh-y2-1,bh-y1-1
 	if y1>=bh or y2<0 or x1>=bw or x2<0 then
 		for i=1, h do
 			dstData[i] = string.rep(bgcol,w)
@@ -141,8 +170,21 @@ function BMP:conv64K(bitmap, ...)
 		return img
 	end
 
+	if loadflg then
+		xbytes = bitmap.width * bb
+        xbytes = xbytes + (-xbytes)%4 
+		offset = self:readDword(bitmap.header, 11) + y1 * xbytes + x1 * bb 
+		num = (x2-x1+1) * bb
+		inc = xbytes - num
+		fp	= io.open(path, "rb")
+		if not fp then
+			return nil, "Can't open file!"
+		end
+		fp:seek("set", offset)
+	end
+
 	i = 1
-	for cy=y, -1 do
+	for cy=bh, y+h-1 do
 		dstData[i] = string.rep(bgcol,w)
 		i = i+1
 	end
@@ -152,11 +194,18 @@ function BMP:conv64K(bitmap, ...)
 		else
 			line = ""
 		end
-		idx = 3*x1+1
-		if flat==0 then
-			data = bitmap.data[cy+1]
+
+		if loadflg then
+			idx = 1
+			data = fp:read(num)
+			fp:seek("cur",inc)
 		else
-			data = bitmap.data:sub(cy*bw*bb+1,(cy+1)*bw*bb)
+			idx = 3*x1+1
+			if flat==0 then
+				data = bitmap.data[cy+1]
+			else
+				data = bitmap.data:sub(cy*bw*bb+1,(cy+1)*bw*bb)
+			end
 		end
 		for i=0, x2-x1 do
 			b,g,r = data:byte(idx,idx+2)
@@ -173,8 +222,12 @@ function BMP:conv64K(bitmap, ...)
 		i = i+1
 		collectgarbage()
 	end
-	for j=i, h do
-		dstData[j] = string.rep(bgcol,w)
+	for cy=y, -1 do
+		dstData[i] = string.rep(bgcol,w)
+		i = i+1
+	end
+	if loadflg then
+		fp:close()
 	end
 	collectgarbage()
 
